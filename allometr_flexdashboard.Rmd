@@ -14,6 +14,7 @@ library(shiny)
 library(shinyjs)
 library(plotly)
 library(writexl)
+library(DT)
 
 # database
 allometr_db <- pool::dbPool(
@@ -36,8 +37,7 @@ Sidebar {.sidebar}
 #### Especify the desired constraints for the allometries:
 
 ```{r}
-## TODO better input logic for autodetect available values
-## TODO order of inputs, first variables, then other stuff
+## NOTFIX better input logic for autodetect available values
 
 # shinyjs
 useShinyjs(rmd = TRUE)
@@ -81,51 +81,88 @@ specialparam_choices <- allometries_table %>%
   dplyr::pull(special_param) %>% unique() %>% sort()
 # inputs
 shiny::tagList(
-  # allometry
-  shiny::selectInput(
-    'allolvl', 'Allometry level',
-    choices = allometry_choices, multiple = TRUE
-  ),
-  shinyjs::hidden(
-    shiny::uiOutput('allo_values')
-  ),
-  # spatial
-  shiny::selectInput(
-    'spatial', 'Spatial ambit', choices = spatial_choices, multiple = TRUE
-  ),
-  shinyjs::hidden(
-    shiny::uiOutput('spatial_values')
-  ),
-  # functional group
-  shiny::selectInput(
-    'functgroup', 'Functional group', choices = functgroup_choices,
-    multiple = TRUE
-  ),
-  shinyjs::hidden(
-    shiny::div(
-      id = 'functgroup_values_div',
-      shiny::uiOutput('functgroup_values')
+  shiny::div(
+    id = 'inputs_sidebar',
+    # vars
+    shiny::selectInput(
+      'depvar', 'Dependent variable',
+      choices = depvar_choices, multiple = TRUE
+    ),
+    shiny::selectInput(
+      'indepvars', 'Independent variables',
+      choices = indepvars_choices, multiple = TRUE
+    ),
+    # allometry
+    shiny::selectInput(
+      'allolvl', 'Allometry level',
+      choices = allometry_choices, multiple = TRUE
+    ),
+    shinyjs::hidden(
+      shiny::uiOutput('allo_values')
+    ),
+    # spatial
+    shiny::selectInput(
+      'spatial', 'Spatial ambit', choices = spatial_choices, multiple = TRUE
+    ),
+    shinyjs::hidden(
+      shiny::uiOutput('spatial_values')
+    ),
+    # functional group
+    shiny::selectInput(
+      'functgroup', 'Functional group', choices = functgroup_choices,
+      multiple = TRUE
+    ),
+    shinyjs::hidden(
+      shiny::div(
+        id = 'functgroup_values_div',
+        shiny::uiOutput('functgroup_values')
+      )
+    ),
+    # other
+    shiny::selectInput(
+      'cubication', 'Cubication shape', choices = cubication_choices,
+      multiple = TRUE
+    ),
+    shiny::selectInput(
+      'specialparam', 'Special parameter',
+      choices = specialparam_choices, multiple = TRUE
+    ),
+    shiny::br(),
+    
+    # reset button
+    shiny::actionButton('reset_all', 'Reset')
     )
-  ),
-  # vars
-  shiny::selectInput(
-    'depvar', 'Dependent variable',
-    choices = depvar_choices, multiple = TRUE
-  ),
-  shiny::selectInput(
-    'indepvars', 'Independent variables',
-    choices = indepvars_choices, multiple = TRUE
-  ),
-  # other
-  shiny::selectInput(
-    'cubication', 'Cubication shape', choices = cubication_choices,
-    multiple = TRUE
-  ),
-  shiny::selectInput(
-    'specialparam', 'Special parameter',
-    choices = specialparam_choices, multiple = TRUE
-  )
 )
+
+# reactive to create the filtering expressionS
+filtering_expr <- shiny::reactive({
+  # filter exprs
+  rlang::quos(
+    allometry_level %in% !! input$allolvl,
+    spatial_level %in% !! input$spatial,
+    spatial_name %in% !! input$spatial_values_input,
+    functional_group_level %in% !! input$functgroup,
+    functional_group_name %in% !! input$functgroup_values_input,
+    dependent_var %in% !! input$depvar,
+    independent_var_1 %in% !! input$indepvars |
+      independent_var_2 %in% !! input$indepvars |
+      independent_var_3 %in% !! input$indepvars,
+    cubication_shape %in% !! input$cubication,
+    special_param %in% !! input$specialparam
+  ) %>%
+    # removing null or empty inputs
+    magrittr::extract(!purrr::map_lgl(list(
+      input$allolvl,
+      input$spatial,
+      input$spatial_values_input,
+      input$functgroup,
+      input$functgroup_values_input,
+      input$depvar,
+      input$indepvars,
+      input$cubication,
+      input$specialparam
+    ), is.null))
+})
 
 # observer to show the ui for the allometry level values
 shiny::observe({
@@ -163,16 +200,14 @@ output$spatial_values <- shiny::renderUI({
   )
 })
 # observer to show the ui for functional group values
-shiny::observeEvent(
-  eventExpr = input$functgroup,
-  handlerExpr = {
-    if (is.null(input$functgroup) || input$functgroup == '') {
-      shinyjs::hide('functgroup_values_div')
-    } else {
-      shinyjs::show('functgroup_values_div')
-    }
+shiny::observe({
+  functional_group <- input$functgroup
+  if (is.null(functional_group) || functional_group == '') {
+    shinyjs::hide('functgroup_values_div')
+  } else {
+    shinyjs::show('functgroup_values_div')
   }
-)
+})
 output$functgroup_values <- shiny::renderUI({
   # functgroup level
   functgroup_vals <- input$functgroup
@@ -189,35 +224,13 @@ output$functgroup_values <- shiny::renderUI({
   )
 })
 
-# reactive to create the filtering expression
-filtering_expr <- shiny::reactive({
-  # filter exprs
-  rlang::quos(
-    allometry_level %in% !! input$allolvl,
-    spatial_level %in% !! input$spatial,
-    spatial_name %in% !! input$spatial_values_input,
-    functional_group_level %in% !! input$functgroup,
-    functional_group_name %in% !! input$functgroup_values_input,
-    dependent_var %in% !! input$depvar,
-    independent_var_1 %in% !! input$indepvars |
-      independent_var_2 %in% !! input$indepvars |
-      independent_var_3 %in% !! input$indepvars,
-    cubication_shape %in% !! input$cubication,
-    special_parameter %in% !! input$specialparam
-  ) %>%
-    # removing null or empty inputs
-    magrittr::extract(!purrr::map_lgl(list(
-      input$allolvl,
-      input$spatial,
-      input$spatial_values_input,
-      input$functgroup,
-      input$functgroup_values_input,
-      input$depvar,
-      input$indepvars,
-      input$cubication,
-      input$specialparam
-    ), is.null))
-})
+# observer for reset button
+shiny::observeEvent(
+  input$reset_all,
+  {
+    shinyjs::reset('inputs_sidebar')
+  }
+)
 ```
 
 Glance
@@ -552,25 +565,28 @@ Row
 #       )
 #     )
 # })
-# renderTable({
-#   allometries_table %>%
-#     dplyr::filter(!!! filtering_expr())
-# }, digits = 2)
-DT::renderDT({
-  dt_data <- allometries_table %>%
+renderTable({
+  allometries_table %>%
     dplyr::filter(!!! filtering_expr())
-  
-  dt_data %>%
-    DT::datatable(
-      class = 'compact hover nowrap row-border order-column',
-      options = list(
-        dom = 'tp',
-        pageLength = 50,
-        columnDefs = list(list(className = 'dt-right', targets = '_all'))
-      )
-    ) %>%
-    DT::formatRound(dt_data %>% map_lgl(is.numeric), digits = 2)
-})
+}, digits = 3)
+# DT::renderDT({
+#   dt_data <- allometries_table %>%
+#     dplyr::filter(!!! filtering_expr()) %>%
+#     dplyr::mutate_if(
+#       is.numeric, round, 3
+#     )
+#   
+#   DT::datatable(
+#     dt_data,
+#     class = 'compact hover nowrap row-border order-column',
+#     options = list(
+#       dom = 'tp',
+#       columnDefs = list(list(className = 'dt-right', targets = '_all')),
+#       pageLength = 50,
+#       scrollX = TRUE, scrollCollapse = TRUE, fillContainer = TRUE
+#     )
+#   )
+# })
 ```
 
 Calculate
