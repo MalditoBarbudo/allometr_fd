@@ -1,5 +1,5 @@
 ---
-title: "Untitled"
+title: "Allometr App"
 output: 
   flexdashboard::flex_dashboard
 runtime:
@@ -251,7 +251,7 @@ compute_equations <- reactive({
 })
 
 renderValueBox({
-  valueBox(compute_equations(), icon = 'fa-calculator')
+  valueBox(compute_equations(), icon = 'fa-calculator', color = '#abb7b7')
 })
 ```
 
@@ -283,7 +283,7 @@ compute_indep_vars <- reactive({
 })
 
 renderValueBox({
-  valueBox(compute_indep_vars(), icon = 'fa-chart-line')
+  valueBox(compute_indep_vars(), icon = 'fa-ruler', color = '#67809f')
 })
 
 ```
@@ -317,9 +317,20 @@ renderPlotly({
     gather('indep_var_order', 'indep_vars', starts_with('independent_')) %>%
     filter(!is.na(indep_vars)) %>%
     ggplot() +
-    geom_bar(aes(x = indep_vars, fill = indep_vars), show.legend = FALSE) +
+    geom_bar(aes(x = indep_vars, y = stat(count/1000), fill = indep_vars), show.legend = FALSE) +
     scale_fill_viridis_d() +
-    guides(fill = FALSE)
+    guides(fill = FALSE) +
+    labs(x = '', y = 'Allometries (x 1000)') +
+    theme_minimal() +
+    theme(
+      plot.background = element_rect(fill = '#67809f'),
+      # line = element_line(size = 0),
+      panel.background = element_rect(fill = '#67809f', color = NA),
+      panel.grid = element_line(color = '#2e3131'),
+      panel.grid.minor = element_blank(),
+      panel.grid.major.x = element_blank()
+      # axis.line.y = element_line(size = 1, color = 'black')
+    )
   
   ggplotly(p, tooltip = 'y') %>% hide_legend()
 })
@@ -337,7 +348,7 @@ compute_spatial_ambits <- reactive({
 renderValueBox({
   valueBox(
     compute_spatial_ambits() %>% pull(spatial_level) %>% unique() %>% length(),
-    icon = 'fa-chart-line'
+    icon = 'fa-layer-group', color = '#eb974e'
   )
 })
 ```
@@ -354,7 +365,7 @@ compute_spatial_names <- reactive({
 renderValueBox({
   valueBox(
     compute_spatial_names() %>% pull(spatial_name) %>% unique() %>% length(),
-    icon = 'fa-chart-line'
+    icon = 'fa-layer-group', color = '#eb974e'
   )
 })
 ```
@@ -385,9 +396,20 @@ renderPlotly({
     dplyr::filter(!!! filtering_expr()) %>%
     count(spatial_level, spatial_name) %>%
     ggplot() +
-    geom_col(aes(x = spatial_level, y = n, fill = spatial_name), show.legend = FALSE) +
+    geom_col(aes(x = spatial_level, y = n/1000, fill = spatial_name), show.legend = FALSE) +
     scale_fill_viridis_d() +
-    guides(fill = FALSE)
+    labs(x = '', y = 'Allometries (x 1000)') +
+    guides(fill = FALSE) +
+    theme_minimal() +
+    theme(
+      plot.background = element_rect(fill = '#eb974e'),
+      # line = element_line(size = 0),
+      panel.background = element_rect(fill = '#eb974e', color = NA),
+      panel.grid = element_line(color = '#2e3131'),
+      panel.grid.minor = element_blank(),
+      panel.grid.major.x = element_blank()
+      # axis.line.y = element_line(size = 1, color = 'black')
+    )
   
   ggplotly(p, tooltip = c('y', 'fill')) %>% hide_legend()
 })
@@ -413,7 +435,7 @@ renderValueBox({
       filter(functional_group_level == 'species') %>%
       pull(functional_group_level) %>%
       length(),
-    icon = 'fa-chart-line'
+    icon = 'fa-sitemap', color = '#87d37c'
   )
 })
 
@@ -429,7 +451,7 @@ renderValueBox({
       filter(functional_group_level == 'genus') %>%
       pull(functional_group_level) %>%
       length(),
-    icon = 'fa-chart-line'
+    icon = 'fa-sitemap', color = '#87d37c'
   )
 })
 ```
@@ -457,9 +479,20 @@ renderPlotly({
   p <- compute_functional_groups() %>%
     count(functional_group_level, functional_group_name) %>%
     ggplot() +
-    geom_col(aes(x = functional_group_level, y = n, fill = functional_group_name)) +
+    geom_col(aes(x = functional_group_level, y = n/1000, fill = functional_group_name)) +
     scale_fill_viridis_d() +
-    guides(fill = FALSE)
+    guides(fill = FALSE) +
+    labs(x = '', y = 'Allometries (x 1000)') +
+    theme_minimal() +
+    theme(
+      plot.background = element_rect(fill = '#87d37c'),
+      # line = element_line(size = 0),
+      panel.background = element_rect(fill = '#87d37c', color = NA),
+      panel.grid = element_line(color = '#2e3131'),
+      panel.grid.minor = element_blank(),
+      panel.grid.major.x = element_blank()
+      # axis.line.y = element_line(size = 1, color = 'black')
+    )
   
   ggplotly(p, tooltip = c('y', 'fill')) %>% hide_legend()
 })
@@ -480,7 +513,7 @@ renderValueBox({
       filter(allometry_level == 'tree') %>%
       pull(allometry_name) %>%
       length(),
-    icon = 'fa-chart-line'
+    icon = 'fa-seedling', color = '#89c4f4'
   )
 })
 
@@ -495,7 +528,7 @@ renderValueBox({
       filter(allometry_level == 'organ') %>%
       pull(allometry_name) %>%
       length(),
-    icon = 'fa-chart-line'
+    icon = 'fa-leaf', color = '#89c4f4'
   )
 })
 ```
