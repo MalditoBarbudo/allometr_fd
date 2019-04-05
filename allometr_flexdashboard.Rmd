@@ -21,7 +21,8 @@ allometr_db <- pool::dbPool(
   RPostgreSQL::PostgreSQL(),
   user = 'guest',
   password = 'guest',
-  dbname = 'allometr_db'
+  dbname = 'allometr_db',
+  host = 'localhost'
 )
 
 # tables
@@ -595,6 +596,9 @@ Calculate
 ### Por desarrollar
 
 ```{r}
-
+icon::fa('shapes', size = 5)
 ```
 
+
+
+Building blocks ...
