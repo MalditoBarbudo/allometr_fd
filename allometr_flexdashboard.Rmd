@@ -332,7 +332,7 @@ renderPlotly({
       # axis.line.y = element_line(size = 1, color = 'black')
     )
   
-  ggplotly(p, tooltip = 'y') %>% hide_legend()
+  ggplotly(p, tooltip = 'y') %>% hide_legend() %>% config(displayModeBar = FALSE)
 })
 ```
 
@@ -348,7 +348,7 @@ compute_spatial_ambits <- reactive({
 renderValueBox({
   valueBox(
     compute_spatial_ambits() %>% pull(spatial_level) %>% unique() %>% length(),
-    icon = 'fa-layer-group', color = '#eb974e'
+    icon = 'fa-layer-group', color = '#eb974e', caption = 'Spatial ambits'
   )
 })
 ```
@@ -411,7 +411,7 @@ renderPlotly({
       # axis.line.y = element_line(size = 1, color = 'black')
     )
   
-  ggplotly(p, tooltip = c('y', 'fill')) %>% hide_legend()
+  ggplotly(p, tooltip = c('y', 'fill')) %>% hide_legend() %>% config(displayModeBar = FALSE)
 })
 ```
 
@@ -494,7 +494,7 @@ renderPlotly({
       # axis.line.y = element_line(size = 1, color = 'black')
     )
   
-  ggplotly(p, tooltip = c('y', 'fill')) %>% hide_legend()
+  ggplotly(p, tooltip = c('y', 'fill')) %>% hide_legend() %>% config(displayModeBar = FALSE)
 })
 ```
 
@@ -584,43 +584,28 @@ Row
     
 ```{r table_output}
 # table output
-# DT::renderDT({
-#   allometries_table %>%
-#     # filtering step, based on the data inputs
-#     dplyr::filter(!!! filtering_expr()) %>%
-#     # DT
-#     DT::datatable(
-#       class = 'compact hover nowrap row-border order-column',
-#       options = list(
-#         dom = 't',
-#         paging = FALSE,
-#         scrollCollapse = TRUE, deferRender = TRUE, scrollX = TRUE,
-#         fillContainer = TRUE
-#       )
-#     )
-# })
-renderTable({
+div(
+  style = 'overflow: scroll',
+  DTOutput('allometr_table')
+)
+
+output$allometr_table <- renderDT({
   allometries_table %>%
-    dplyr::filter(!!! filtering_expr())
-}, digits = 3)
-# DT::renderDT({
-#   dt_data <- allometries_table %>%
-#     dplyr::filter(!!! filtering_expr()) %>%
-#     dplyr::mutate_if(
-#       is.numeric, round, 3
-#     )
-#   
-#   DT::datatable(
-#     dt_data,
-#     class = 'compact hover nowrap row-border order-column',
-#     options = list(
-#       dom = 'tp',
-#       columnDefs = list(list(className = 'dt-right', targets = '_all')),
-#       pageLength = 50,
-#       scrollX = TRUE, scrollCollapse = TRUE, fillContainer = TRUE
-#     )
-#   )
-# })
+    dplyr::filter(!!! filtering_expr()) %>%
+    dplyr::mutate_if(is.numeric, round, 3) %>%
+    datatable(
+      class = 'compact hover nowrap row-border order-column',
+      options = list(
+        dom = 'pt',
+        pageLength = 12
+      )
+    )
+})
+
+# renderTable({
+#   allometries_table %>%
+#     dplyr::filter(!!! filtering_expr())
+# }, digits = 3)
 ```
 
 Calculate
